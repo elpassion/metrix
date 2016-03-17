@@ -1,0 +1,6 @@
+working_dir: .
+heroku_app_name: my-orange-blues
+heroku_api_key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+travis_access_token: XXXXXXXXXXXXXXXXXXXXXX
+github_access_token: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+github_repository: user/repo
