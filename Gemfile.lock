@@ -46,6 +46,8 @@ GEM
     sawyer (0.7.0)
       addressable (>= 2.3.5, < 2.5)
       faraday (~> 0.8, < 0.10)
+    sequel (4.32.0)
+    sqlite3 (1.3.11)
     travis (1.8.2)
       backports
       faraday (~> 0.9)
@@ -66,6 +68,8 @@ DEPENDENCIES
   octokit
   platform-api
   rugged
+  sequel
+  sqlite3
   travis
 
 BUNDLED WITH

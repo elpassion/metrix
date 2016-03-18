@@ -1,3 +1,5 @@
+project_name: MyOrangeBlues
+cache_db: ./project.db
 working_dir: .
 heroku_app_name: my-orange-blues
 heroku_api_key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
