@@ -15,27 +15,27 @@ class Project
   end
 
   def commits
-    @commits ||= db[:commits].where(project_id: id).freeze
+    db[:commits].where(project_id: id)
   end
 
   def issues
-    @issues ||= db[:issues].where(project_id: id).freeze
+    db[:issues].where(project_id: id)
   end
 
   def releases
-    @releases ||= db[:releases].where(project_id: id).freeze
+    db[:releases].where(project_id: id)
   end
 
   def builds
-    @builds ||= db[:builds].where(project_id: id).freeze
+    db[:builds].where(project_id: id)
   end
 
   def pull_requests
-    @pull_requests ||= db[:pull_requests].where(project_id: id).freeze
+    db[:pull_requests].where(project_id: id)
   end
 
   def comments
-    @comments ||= db[:comments].where(project_id: id).freeze
+    db[:comments].where(project_id: id)
   end
 
   def transaction(&block)

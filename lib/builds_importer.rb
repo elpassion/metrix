@@ -1,33 +1,26 @@
+require 'bigdecimal'
 require 'travis/pro'
+
 require_relative 'importer'
 
 class BuildsImporter < Importer
+  self.resource_name = 'Builds'
+
   COVERAGE_PATTERN = /Coverage\ \=\ (\d+\.\d+)\%/
-
-  def import(truncate: false)
-    truncate_builds if truncate
-
-    import_builds
-  end
 
   private
 
-  def truncate_builds
-    puts '-----> Deleting all project builds'
-
+  def truncate_resources
     project.builds.delete
   end
 
-  def import_builds
-    puts "-----> Importing builds from #{project.config.github_repository}"
-
-    imported_build_ids = []
-    travis_api.builds.each { |build| imported_build_ids << import_build(build) }
-
-    puts "       Imported #{imported_build_ids.size} builds"
+  def import_resources
+    travis_api.builds.each { |build| imported_resources << import_build(build) }
   end
 
   def import_build(build)
+    log "Parsing Build ##{build[:number]}"
+
     coverage = nil
 
     build.jobs.first.log.body do |part|

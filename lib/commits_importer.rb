@@ -2,45 +2,19 @@ require 'rugged'
 require_relative 'importer'
 
 class CommitsImporter < Importer
-
-  def initialize(*)
-    super
-
-    @repo    = Rugged::Repository.new(project.path)
-  end
-
-  def import(truncate: false)
-    truncate_commits if truncate
-
-    reset_git_repository
-    import_commits
-  end
+  self.resource_name = 'Commits'
 
   private
 
-  attr_reader :repo
-
-  def reset_git_repository
-    repo.reset('origin/HEAD', :hard)
-  end
-
-  def truncate_commits
-    puts '-----> Deleting all project commits'
-
-    project.commits.delete
-  end
-
-  def import_commits
-    puts "-----> Importing commits from #{repo.workdir}"
+  def import_resources
+    repo = Rugged::Repository.new(project.path)
+    reset_git_repository(repo)
 
     walker = Rugged::Walker.new(repo)
     walker.sorting(Rugged::SORT_DATE | Rugged::SORT_REVERSE)
     walker.push(repo.head.target)
 
-    imported_commit_ids = []
-    walker.each { |commit| imported_commit_ids << import_commit(commit) }
-
-    puts "       Imported #{imported_commit_ids.size} commits"
+    walker.each { |commit| imported_resources << import_commit(commit) }
   end
 
   def import_commit(commit)
@@ -49,5 +23,13 @@ class CommitsImporter < Importer
         timestamp:  commit.time,
         sha:        commit.oid
     )
+  end
+
+  def reset_git_repository(repo)
+    repo.reset('origin/HEAD', :hard)
+  end
+
+  def truncate_resources
+    project.commits.delete
   end
 end

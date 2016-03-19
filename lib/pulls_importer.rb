@@ -1,30 +1,16 @@
 require_relative 'github_importer'
 
 class PullsImporter < GithubImporter
-
-  def import(truncate: false)
-    truncate_pull_requests if truncate
-
-    import_pull_requests
-  end
+  self.resource_name = 'Pull Requests'
 
   private
 
-  def truncate_pull_requests
-    puts '-----> Deleting all project pull requests'
+  def import_resources
+    pull_requests = github_api.pull_requests(project.config.github_repository, state: 'all')
 
-    project.pull_requests.delete
-  end
-
-  def import_pull_requests
-    puts "-----> Importing pull requests from #{project.config.github_repository}"
-
-    imported_pull_ids = []
-    github_api.pull_requests(project.config.github_repository, state: 'all').each do |pull_request|
-      imported_pull_ids << import_pull_request(pull_request)
+    pull_requests.each do |pull_request|
+      imported_resources << import_pull_request(pull_request)
     end
-
-    puts "       Imported #{imported_pull_ids.size} pull requests"
   end
 
   def import_pull_request(pull_request)
@@ -35,4 +21,9 @@ class PullsImporter < GithubImporter
         merged_at:  pull_request.merged_at
     )
   end
+
+  def truncate_resources
+    project.pull_requests.delete
+  end
+
 end

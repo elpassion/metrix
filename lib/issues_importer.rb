@@ -4,8 +4,10 @@ require 'open3'
 require 'rugged'
 
 require_relative 'importer'
+require_relative 'code_quality_calculator'
 
 class IssuesImporter < Importer
+  self.resource_name = 'Issues'
 
   def initialize(*)
     super
@@ -14,56 +16,69 @@ class IssuesImporter < Importer
     @repo         = Rugged::Repository.new(project.path)
   end
 
-  def import(truncate: false)
-    truncate_issues if truncate
-    analyze_builds(builds_scope(truncate))
-    reset_git_repository
-  end
-
   private
 
   attr_reader :current_path, :repo
 
-  def analyze_builds(builds)
-    builds_count = builds.dup.count
+  def import_resources
+    builds       = builds_scope(truncate)
+    builds_count = builds.count
     index        = 0
 
     builds.order(:number).each do |build|
-      puts "-----> Build: ##{build[:number]} (#{index += 1} / #{builds_count})"
+      log "Analyzing Build ##{build[:number]} (#{index += 1} / #{builds_count})", level: 1
 
       analyze_build(build)
     end
+
+    reset_git_repository
   end
 
   def analyze_build(build)
     truncate_build_issues(build)
 
     unless repo.exists?(build[:commit_sha])
-      puts "     ! Skipping - commit does not exist: #{build[:commit_sha]}"
+      log_warning "Commit does not exist: #{build[:commit_sha]}"
+
+      skipped_resources << build[:id]
 
       return
     end
 
     goto_build(build)
 
-    return unless raw_issues = analyze_issues
+    unless raw_issues = analyze_issues
+      log_warning "Cannot analyze Build ##{build[:id]}"
+
+      skipped_resources << build[:id]
+
+      return
+    end
 
     import_raw_issues(build, raw_issues)
+    calculate_code_quality(build)
+
+    imported_resources << build[:id]
+  end
+
+  def calculate_code_quality(build)
+    log 'Calculating code quality'
+
+    code_quality = CodeQualityCalculator.new(project, build).calculate
+    project.builds.where(id: build[:id]).update(code_quality)
   end
 
   def goto_build(build)
     FileUtils.chdir(project.path)
 
-    puts "       Resetting to #{build[:commit_sha]}"
+    log "Rolling back to #{build[:commit_sha]}"
     repo.reset(build[:commit_sha], :hard)
     `git clean -f`
 
     FileUtils.cp_r(File.join(current_path, 'codeclimate/.'), project.path)
   end
 
-  def truncate_issues
-    puts '-----> Deleting all project issues'
-
+  def truncate_resources
     project.issues.delete
   end
 
@@ -72,13 +87,13 @@ class IssuesImporter < Importer
   end
 
   def analyze_issues
-    puts '       Analyzing'
+    log 'Running CodeClimate'
 
     FileUtils.chdir(project.path)
     stdout, stderr, status = Open3.capture3('codeclimate analyze -f json')
 
     if (status && status.exitstatus != 0) || stderr =~ /\S/
-      puts "     ! #{stderr.strip.gsub(/\n/, "\n     ! ")}"
+      log_warning stderr
 
       return
     end
@@ -87,12 +102,10 @@ class IssuesImporter < Importer
   end
 
   def import_raw_issues(build, raw_issues)
-    puts '       Importing Issues'
-
-    imported_issue_ids = []
+    imported_issues = []
     project.transaction do
       raw_issues.each do |issue|
-        imported_issue_ids << project.issues.insert(
+        imported_issues << project.issues.insert(
             project_id:       project.id,
             build_id:         build[:id],
             timestamp:        build[:timestamp],
@@ -104,7 +117,7 @@ class IssuesImporter < Importer
       end
     end
 
-    puts "       Imported #{imported_issue_ids.size} issues"
+    log_success "Imported #{imported_issues.size} issues"
   end
 
   def builds_scope(truncate)

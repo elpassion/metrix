@@ -1,6 +1,3 @@
-require 'bigdecimal'
-require 'date'
-
 require_relative 'project'
 require_relative 'builds_importer'
 require_relative 'commits_importer'
@@ -15,7 +12,7 @@ require_relative 'releases_importer'
 # + Git commits count
 # + GitHub comments (PR comments + Commit comments + Issue comments)
 # + GitHub PR count (created + merged)
-# - CodeClimate code quality
+# + CodeClimate GPA + code quality (issues count)
 # + Code Coverage
 # - Bugs found
 

@@ -1,31 +1,16 @@
+require 'date'
 require 'platform-api'
+
 require_relative 'importer'
 
 class ReleasesImporter < Importer
-
-  def import(truncate: false)
-    truncate_releases if truncate
-
-    import_releases
-  end
+  self.resource_name = 'Releases'
 
   private
 
-  def truncate_releases
-    puts '-----> Deleting all project releases'
-
-    project.releases.delete
-  end
-
-  def import_releases
-    puts "-----> Importing releases from #{project.config.heroku_app_name}"
-
+  def import_resources
     releases = heroku_api.release.list(project.config.heroku_app_name)
-
-    imported_release_ids = []
-    releases.each { |release| imported_release_ids << import_release(release) }
-
-    puts "       Imported #{imported_release_ids.size} commits"
+    releases.each { |release| imported_resources << import_release(release) }
   end
 
   def import_release(release)
@@ -35,6 +20,10 @@ class ReleasesImporter < Importer
         version:     release['version'],
         description: release['description']
     )
+  end
+
+  def truncate_resources
+    project.releases.delete
   end
 
   def heroku_api

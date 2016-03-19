@@ -1,3 +1,5 @@
+require 'bigdecimal'
+require 'date'
 require 'sqlite3'
 require 'sequel'
 require 'yaml'
@@ -26,7 +28,11 @@ db.create_table :builds do
   String :commit_sha
   Boolean :pull_request
   String :state
+  Integer :quality_issues
+  Integer :style_issues
+  Integer :security_issues
   BigDecimal :coverage
+  BigDecimal :gpa
 end
 
 db.create_table :issues do
