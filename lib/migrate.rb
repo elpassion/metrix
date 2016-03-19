@@ -2,13 +2,13 @@ require 'sqlite3'
 require 'sequel'
 require 'yaml'
 
-config  = YAML.load_file('config.yml')
-db_file = config['cache_db']
-db      = Sequel.connect("sqlite://#{db_file}")
+config = YAML.load_file('config.yml')
+db     = Sequel.connect("sqlite://#{config['db']}")
 
 db.create_table :projects do
   primary_key :id
   String :name
+  index :name, unique: true
 end
 
 db.create_table :commits do
@@ -23,6 +23,7 @@ db.create_table :builds do
   foreign_key :project_id, :projects
   DateTime :timestamp
   Integer :number
+  String :commit_sha
   Boolean :pull_request
   String :state
   BigDecimal :coverage
@@ -31,9 +32,10 @@ end
 db.create_table :issues do
   primary_key :id
   foreign_key :project_id, :projects
-  foreign_key :commit_id, :commits
+  foreign_key :build_id, :builds
   DateTime :timestamp
   String :category
+  String :path
   Integer :remediation_cost
   String :engine_name
 end

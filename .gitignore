@@ -36,4 +36,7 @@ build/
 .rvmrc
 
 # Configuration file containing secrets
-config.yml
+/config.yml
+
+# Database files
+/*.db
