@@ -14,10 +14,6 @@ class Project
     initialize_db_project
   end
 
-  def db
-    @db ||= Sequel.connect("sqlite://#{db_path}")
-  end
-
   def commits
     @commits ||= db[:commits].where(project_id: id).freeze
   end
@@ -42,6 +38,10 @@ class Project
     @comments ||= db[:comments].where(project_id: id).freeze
   end
 
+  def transaction(&block)
+    db.transaction(&block)
+  end
+
   private
 
   attr_reader :db_path
@@ -54,6 +54,10 @@ class Project
     @db_path = config.delete('db') { raise 'Project db not configured' }
 
     @config = OpenStruct.new(config).freeze
+  end
+
+  def db
+    @db ||= Sequel.connect("sqlite://#{db_path}")
   end
 
   def initialize_db_project

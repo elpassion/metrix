@@ -2,6 +2,7 @@ require 'fileutils'
 require 'json'
 require 'open3'
 require 'rugged'
+
 require_relative 'importer'
 
 class IssuesImporter < Importer
@@ -24,7 +25,7 @@ class IssuesImporter < Importer
   attr_reader :current_path, :repo
 
   def analyze_builds(builds)
-    builds_count = builds.count
+    builds_count = builds.dup.count
     index        = 0
 
     builds.order(:number).each do |build|
@@ -89,7 +90,7 @@ class IssuesImporter < Importer
     puts '       Importing Issues'
 
     imported_issue_ids = []
-    project.db.transaction do
+    project.transaction do
       raw_issues.each do |issue|
         imported_issue_ids << project.issues.insert(
             project_id:       project.id,
@@ -108,11 +109,11 @@ class IssuesImporter < Importer
 
   def builds_scope(truncate)
     if truncate
-      project.db[:builds]
+      project.builds
     else
       already = project.issues.distinct.select(:build_id).to_a.map(&:values).flatten
 
-      project.db[:builds].exclude(id: already)
+      project.builds.exclude(id: already)
     end
   end
 
