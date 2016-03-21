@@ -14,7 +14,7 @@ class IssuesImporter < Importer
     super
 
     @current_path = FileUtils.pwd
-    @git_walker   = GitWalker(project.path)
+    @git_walker   = GitWalker.new(project.path)
   end
 
   private

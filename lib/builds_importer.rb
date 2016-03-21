@@ -16,7 +16,6 @@ class BuildsImporter < Importer
     log 'Fetching builds list'
     builds = travis_api.builds.to_a
 
-    log 'Fetching builds code coverage statistics'
     builds_coverage = fetch_builds_coverage(builds)
 
     log 'Importing builds'
@@ -38,7 +37,7 @@ class BuildsImporter < Importer
   def fetch_builds_coverage(builds)
     builds_coverage = {}
 
-    Parallel.each(builds, in_threads: 8) do |build|
+    Parallel.each(builds, in_threads: 8, progress: { title: 'Fetching Builds Logs', format: '       %t |%E | %B | %a' }) do |build|
       builds_coverage[build] = parse_coverage(build)
     end
 

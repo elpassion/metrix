@@ -21,7 +21,7 @@ class GitWalker
     raise "Commit #{sha} does not exist" unless exists?(sha)
 
     repo.reset(sha, :hard)
-    # clean_repository
+    clean_repository
 
     yield if block_given?
   end
@@ -31,7 +31,7 @@ class GitWalker
   attr_reader :repo
 
   def clean_repository
-    _, stderr, status = Open3.capture3('git', "--git-dir=\"#{repo.path}\"", 'clean', '--force')
+    _, stderr, status = Open3.capture3('git', "--git-dir=#{repo.path}", "--work-tree=#{path}", 'clean', '--force')
 
     if (status && status.exitstatus != 0) || stderr =~ /\S/
       raise "Could not clean repository: #{stderr || status}"
