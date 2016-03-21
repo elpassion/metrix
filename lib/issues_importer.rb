@@ -5,6 +5,7 @@ require 'rugged'
 
 require_relative 'importer'
 require_relative 'code_quality_calculator'
+require_relative 'utils/git_walker'
 
 class IssuesImporter < Importer
   self.resource_type = :issues
@@ -13,12 +14,12 @@ class IssuesImporter < Importer
     super
 
     @current_path = FileUtils.pwd
-    @repo         = Rugged::Repository.new(project.path)
+    @git_walker   = GitWalker(project.path)
   end
 
   private
 
-  attr_reader :current_path, :repo
+  attr_reader :current_path, :git_walker
 
   def import_resources
     builds       = builds_scope(truncate)
@@ -30,14 +31,12 @@ class IssuesImporter < Importer
 
       analyze_build(build)
     end
-
-    reset_git_repository
   end
 
   def analyze_build(build)
     truncate_build_issues(build)
 
-    unless repo.exists?(build[:commit_sha])
+    unless git_walker.exists?(build[:commit_sha])
       log_warning "Commit does not exist: #{build[:commit_sha]}"
 
       skipped_resources << build[:id]
@@ -45,7 +44,9 @@ class IssuesImporter < Importer
       return
     end
 
-    goto_build(build)
+    git_walker.goto(build[:commit_sha]) do
+      FileUtils.cp_r(File.join(current_path, 'codeclimate/.'), project.path)
+    end
 
     unless raw_issues = analyze_issues
       log_warning "Cannot analyze Build ##{build[:number]}"
@@ -66,16 +67,6 @@ class IssuesImporter < Importer
 
     code_quality = CodeQualityCalculator.new(project, build).calculate
     project.builds.where(id: build[:id]).update(code_quality)
-  end
-
-  def goto_build(build)
-    FileUtils.chdir(project.path)
-
-    log "Rolling back to #{build[:commit_sha]}"
-    repo.reset(build[:commit_sha], :hard)
-    `git clean -f`
-
-    FileUtils.cp_r(File.join(current_path, 'codeclimate/.'), project.path)
   end
 
   def truncate_build_issues(build)
@@ -124,12 +115,6 @@ class IssuesImporter < Importer
 
       project.builds.exclude(id: already)
     end
-  end
-
-  def reset_git_repository
-    FileUtils.chdir(project.path)
-    repo.reset('origin/HEAD', :hard)
-    `git clean -f`
   end
 
 end
