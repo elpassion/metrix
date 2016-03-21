@@ -1,7 +1,7 @@
 require 'bigdecimal'
 require 'date'
-require 'sqlite3'
 require 'sequel'
+require 'sqlite3'
 require 'yaml'
 
 config = YAML.load_file('config.yml')

@@ -42,7 +42,7 @@ class Importer
   attr_reader :project, :imported_resources, :skipped_resources, :truncate
 
   class << self
-    attr_accessor :resource_name
+    attr_accessor :resource_type
   end
 
   def do_import
@@ -62,10 +62,18 @@ class Importer
   end
 
   def truncate_resources
-    raise NotImplementedError
+    resources_scope.delete
+  end
+
+  def resources_scope
+    project.public_send(resource_type)
+  end
+
+  def resource_type
+    self.class.resource_type
   end
 
   def resource_name
-    self.class.resource_name
+    resource_type.to_s.tr('-_', ' ').capitalize
   end
 end

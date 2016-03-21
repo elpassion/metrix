@@ -1,7 +1,7 @@
 require_relative 'github_importer'
 
 class CommentsImporter < GithubImporter
-  self.resource_name = 'Comments'
+  self.resource_type = :comments
 
   private
 
@@ -20,9 +20,5 @@ class CommentsImporter < GithubImporter
         project_id: project.id,
         timestamp:  comment.created_at
     )
-  end
-
-  def truncate_resources
-    project.comments.delete
   end
 end

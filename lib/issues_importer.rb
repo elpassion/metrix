@@ -7,7 +7,7 @@ require_relative 'importer'
 require_relative 'code_quality_calculator'
 
 class IssuesImporter < Importer
-  self.resource_name = 'Issues'
+  self.resource_type = :issues
 
   def initialize(*)
     super
@@ -48,7 +48,7 @@ class IssuesImporter < Importer
     goto_build(build)
 
     unless raw_issues = analyze_issues
-      log_warning "Cannot analyze Build ##{build[:id]}"
+      log_warning "Cannot analyze Build ##{build[:number]}"
 
       skipped_resources << build[:id]
 
@@ -76,10 +76,6 @@ class IssuesImporter < Importer
     `git clean -f`
 
     FileUtils.cp_r(File.join(current_path, 'codeclimate/.'), project.path)
-  end
-
-  def truncate_resources
-    project.issues.delete
   end
 
   def truncate_build_issues(build)

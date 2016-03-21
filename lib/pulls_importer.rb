@@ -1,7 +1,7 @@
 require_relative 'github_importer'
 
 class PullsImporter < GithubImporter
-  self.resource_name = 'Pull Requests'
+  self.resource_type = :pull_requests
 
   private
 
@@ -21,9 +21,4 @@ class PullsImporter < GithubImporter
         merged_at:  pull_request.merged_at
     )
   end
-
-  def truncate_resources
-    project.pull_requests.delete
-  end
-
 end

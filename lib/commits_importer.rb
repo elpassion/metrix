@@ -2,7 +2,7 @@ require 'rugged'
 require_relative 'importer'
 
 class CommitsImporter < Importer
-  self.resource_name = 'Commits'
+  self.resource_type = :commits
 
   private
 
@@ -27,9 +27,5 @@ class CommitsImporter < Importer
 
   def reset_git_repository(repo)
     repo.reset('origin/HEAD', :hard)
-  end
-
-  def truncate_resources
-    project.commits.delete
   end
 end

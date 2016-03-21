@@ -4,7 +4,7 @@ require 'platform-api'
 require_relative 'importer'
 
 class ReleasesImporter < Importer
-  self.resource_name = 'Releases'
+  self.resource_type = :releases
 
   private
 
@@ -20,10 +20,6 @@ class ReleasesImporter < Importer
         version:     release['version'],
         description: release['description']
     )
-  end
-
-  def truncate_resources
-    project.releases.delete
   end
 
   def heroku_api
