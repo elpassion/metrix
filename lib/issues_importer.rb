@@ -1,9 +1,12 @@
 require 'fileutils'
 require 'json'
 require 'open3'
+require 'parallel'
 require 'rugged'
+require 'tmpdir'
 
 require_relative 'importer'
+require_relative 'issues_analyzer'
 require_relative 'code_quality_calculator'
 require_relative 'utils/git_walker'
 
@@ -48,8 +51,11 @@ class IssuesImporter < Importer
       FileUtils.cp_r(File.join(current_path, 'codeclimate/.'), project.path)
     end
 
-    unless raw_issues = analyze_issues
-      log_warning "Cannot analyze Build ##{build[:number]}"
+    raw_issues = begin
+      analyze_issues
+    rescue => error
+      log_warning "Cannot analyze Build ##{build[:number]}: "
+      log_warning error.message
 
       skipped_resources << build[:id]
 
@@ -76,16 +82,7 @@ class IssuesImporter < Importer
   def analyze_issues
     log 'Running CodeClimate'
 
-    FileUtils.chdir(project.path)
-    stdout, stderr, status = Open3.capture3('codeclimate analyze -f json')
-
-    if (status && status.exitstatus != 0) || stderr =~ /\S/
-      log_warning stderr
-
-      return
-    end
-
-    JSON.parse(stdout)
+    IssuesAnalyzer.new(project.path).analyze
   end
 
   def import_raw_issues(build, raw_issues)
