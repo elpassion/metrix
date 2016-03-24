@@ -1,9 +1,4 @@
 require 'fileutils'
-require 'json'
-require 'open3'
-require 'parallel'
-require 'rugged'
-require 'tmpdir'
 
 require_relative 'importer'
 require_relative 'issues_analyzer'
@@ -17,55 +12,40 @@ class IssuesImporter < Importer
     super
 
     @current_path = FileUtils.pwd
-    @git_walker   = GitWalker.new(project.path)
   end
 
   private
 
-  attr_reader :current_path, :git_walker
+  attr_reader :current_path
 
   def import_resources
-    builds       = builds_scope(truncate)
-    builds_count = builds.count
-    index        = 0
+    shas   = builds_scope(truncate).order(:number).limit(1).select_map(:commit_sha)
+    walker = GitWalker.new(project.path)
+    shas.select! { |sha| walker.exists?(sha) }
 
-    builds.order(:number).each do |build|
-      log "Analyzing Build ##{build[:number]} (#{index += 1} / #{builds_count})", level: 1
+    issues = walker.map_in_parallel(shas) do |path, sha, chunk_index|
+      log "Analyzing Commit #{sha} (chunk ##{chunk_index + 1})"
 
-      analyze_build(build)
+      [sha, analyze_repository(path, sha)]
+    end
+
+    issues.each do |sha, raw_issues|
+      build = project.builds.first(commit_sha: sha)
+
+      truncate_build_issues(build)
+      import_raw_issues(build, raw_issues)
+      calculate_code_quality(build)
     end
   end
 
-  def analyze_build(build)
-    truncate_build_issues(build)
+  def analyze_repository(path, sha)
+    FileUtils.cp_r(File.join(current_path, 'codeclimate/.'), path)
 
-    unless git_walker.exists?(build[:commit_sha])
-      log_warning "Commit does not exist: #{build[:commit_sha]}"
+    IssuesAnalyzer.new(path).analyze
+  rescue => error
+    log_warning "Cannot analyze Commit #{sha}:\n#{error.message}"
 
-      skipped_resources << build[:id]
-
-      return
-    end
-
-    git_walker.goto(build[:commit_sha]) do
-      FileUtils.cp_r(File.join(current_path, 'codeclimate/.'), project.path)
-    end
-
-    raw_issues = begin
-      analyze_issues
-    rescue => error
-      log_warning "Cannot analyze Build ##{build[:number]}: "
-      log_warning error.message
-
-      skipped_resources << build[:id]
-
-      return
-    end
-
-    import_raw_issues(build, raw_issues)
-    calculate_code_quality(build)
-
-    imported_resources << build[:id]
+    []
   end
 
   def calculate_code_quality(build)
@@ -77,12 +57,6 @@ class IssuesImporter < Importer
 
   def truncate_build_issues(build)
     project.issues.where(build_id: build[:id]).delete
-  end
-
-  def analyze_issues
-    log 'Running CodeClimate'
-
-    IssuesAnalyzer.new(project.path).analyze
   end
 
   def import_raw_issues(build, raw_issues)

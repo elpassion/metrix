@@ -1,6 +1,8 @@
 require 'fileutils'
 require 'open3'
+require 'parallel'
 require 'rugged'
+require 'tmpdir'
 
 class GitWalker
   attr_reader :path
@@ -15,6 +17,31 @@ class GitWalker
 
   def exists?(sha)
     repo.exists?(sha)
+  end
+
+  def map(shas)
+    shas.map do |sha|
+      goto(sha)
+
+      yield sha
+    end
+  end
+
+  def map_in_parallel(shas, processes: 4, chunks_count: nil)
+    tmp_directory = create_tmp_directory('parallel-repositories-')
+
+    begin
+      chunks_count ||= processes * 4
+      chunks       = shas.each_slice((shas.size / chunks_count.to_f).ceil).to_a
+
+      Parallel.map_with_index(chunks, in_processes: processes) do |chunk, index|
+        GitWalker.new(duplicate_repository(tmp_directory)).map(chunk) do |sha|
+          yield path, sha, index
+        end
+      end.flatten(1)
+    ensure
+      FileUtils.remove_entry(tmp_directory)
+    end
   end
 
   def goto(sha)
@@ -35,6 +62,22 @@ class GitWalker
 
     if (status && status.exitstatus != 0) || stderr =~ /\S/
       raise "Could not clean repository: #{stderr || status}"
+    end
+  end
+
+  def duplicate_repository(tmp_directory)
+    dir = create_tmp_directory('repository-', tmp_directory)
+
+    FileUtils.cp_r(File.join(path, '.'), dir)
+
+    dir
+  end
+
+  def create_tmp_directory(prefix, tmp = nil)
+    tmp ||= FileUtils.mkpath(File.join(FileUtils.pwd, 'tmp'))
+
+    Dir::Tmpname.create(prefix, tmp) do |name|
+      Dir.mkdir(name, 0700)
     end
   end
 
