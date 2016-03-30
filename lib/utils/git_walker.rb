@@ -27,7 +27,7 @@ class GitWalker
     end
   end
 
-  def map_in_parallel(shas, processes: 4, chunks_count: nil)
+  def each_in_parallel(shas, processes: 4, chunks_count: nil)
     tmp_directory = create_tmp_directory('parallel-repositories-')
 
     begin
@@ -35,10 +35,12 @@ class GitWalker
       chunks       = shas.each_slice((shas.size / chunks_count.to_f).ceil).to_a
 
       Parallel.map_with_index(chunks, in_processes: processes) do |chunk, index|
-        GitWalker.new(duplicate_repository(tmp_directory)).map(chunk) do |sha|
-          yield path, sha, index
+        duplicate_path = duplicate_repository(tmp_directory)
+
+        GitWalker.new(duplicate_path).map(chunk) do |sha|
+          yield duplicate_path, sha, index
         end
-      end.flatten(1)
+      end
     ensure
       FileUtils.remove_entry(tmp_directory)
     end
@@ -77,7 +79,7 @@ class GitWalker
     tmp ||= FileUtils.mkpath(File.join(FileUtils.pwd, 'tmp'))
 
     Dir::Tmpname.create(prefix, tmp) do |name|
-      Dir.mkdir(name, 0700)
+      Dir.mkdir(name)
     end
   end
 

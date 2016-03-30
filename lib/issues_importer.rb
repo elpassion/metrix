@@ -18,19 +18,24 @@ class IssuesImporter < Importer
 
   attr_reader :current_path
 
+  def truncate_resources
+    super
+
+    project.builds.update(quality_issues: nil, style_issues: nil, security_issues: nil, gpa: nil)
+  end
+
   def import_resources
-    shas   = builds_scope(truncate).order(:number).limit(1).select_map(:commit_sha)
+    shas   = builds_scope(truncate).order(:number).select_map(:commit_sha)
     walker = GitWalker.new(project.path)
     shas.select! { |sha| walker.exists?(sha) }
 
-    issues = walker.map_in_parallel(shas) do |path, sha, chunk_index|
+    walker.each_in_parallel(shas, processes: 3) do |path, sha, chunk_index|
       log "Analyzing Commit #{sha} (chunk ##{chunk_index + 1})"
 
-      [sha, analyze_repository(path, sha)]
-    end
+      project.reset_db_connection!
 
-    issues.each do |sha, raw_issues|
-      build = project.builds.first(commit_sha: sha)
+      raw_issues = analyze_repository(path, sha)
+      build      = project.builds.first(commit_sha: sha)
 
       truncate_build_issues(build)
       import_raw_issues(build, raw_issues)
@@ -64,13 +69,13 @@ class IssuesImporter < Importer
     project.transaction do
       raw_issues.each do |issue|
         imported_issues << project.issues.insert(
-            project_id:       project.id,
-            build_id:         build[:id],
-            timestamp:        build[:timestamp],
-            category:         issue['categories'].join(', '),
-            path:             issue['location']['path'],
-            remediation_cost: issue['remediation_points'],
-            engine_name:      issue['engine_name']
+          project_id:       project.id,
+          build_id:         build[:id],
+          timestamp:        build[:timestamp],
+          category:         issue['categories'].join(', '),
+          path:             issue['location']['path'],
+          remediation_cost: issue['remediation_points'],
+          engine_name:      issue['engine_name']
         )
       end
     end

@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'timeout'
 
 require_relative '../coverage_calculator'
 require_relative '../importer'
@@ -7,36 +8,35 @@ require_relative '../utils/git_walker'
 class CoverageImporter < Importer
   self.resource_type = :builds
 
-  def initialize(*)
-    super
-
-    @current_path = FileUtils.pwd
-  end
+  TIMEOUT = 60 * 5 # Seconds
 
   private
 
-  attr_reader :current_path
-
   def truncate_resources
-    resources_scope.update(coverage: nil)
+    resources_scope.update(coverage2: nil, lines_of_code: nil, lines_tested: nil)
   end
 
   def import_resources
-    shas   = builds_scope(truncate).order(:number).limit(3).select_map(:commit_sha)
+    shas   = builds_scope(truncate).order(:number).select_map(:commit_sha)
     walker = GitWalker.new(project.path)
     shas.select! { |sha| walker.exists?(sha) }
 
-    coverages = walker.map_in_parallel(shas) do |path, sha, chunk_index|
+    walker.each_in_parallel(shas, processes: 3) do |path, sha, chunk_index|
       log "Analyzing Commit #{sha} (chunk ##{chunk_index + 1})"
 
-      [sha, analyze_repository(path, sha)]
+      raw_coverage = analyze_repository(path, sha)
+
+      project.reset_db_connection!
+      project.builds.where(commit_sha: sha).update(
+        coverage2:     raw_coverage[0],
+        lines_of_code: raw_coverage[1],
+        lines_tested:  raw_coverage[2]
+      )
     end
   end
 
   def analyze_repository(path, sha)
-    FileUtils.cp_r(File.join(current_path, 'codeclimate/.'), path)
-
-    CoverageCalculator.new(path).calculate
+    Timeout::timeout(TIMEOUT) { CoverageCalculator.new(path).calculate }
   rescue => error
     log_warning "Cannot analyze Commit #{sha}:\n#{error.message}"
 

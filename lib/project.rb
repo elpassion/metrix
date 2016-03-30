@@ -42,6 +42,10 @@ class Project
     db.transaction(&block)
   end
 
+  def reset_db_connection!
+    @db = nil
+  end
+
   private
 
   attr_reader :db_path

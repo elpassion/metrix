@@ -1,12 +1,11 @@
+# Project / Repository / Deployment settings
 name: MyOrangeBlues
 path: .
-db: ./project.db
-
-# Repository / Deployment settings
 heroku_app_name: my-orange-blues
 github_repository: user/repo
 
 # Common settings
+db: ./project.db
 heroku_api_key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 travis_access_token: XXXXXXXXXXXXXXXXXXXXXX
 github_access_token: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX

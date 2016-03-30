@@ -31,5 +31,17 @@ Extract several Code Quality Metrics for a Git repository from several services
     $ eval "$(docker-machine env default)"
     ````
     
-6. Run `ruby lib/metrix.rb`
+6. Install CodeClimate CLI (follow instructions on https://github.com/codeclimate/codeclimate)
+7. Run `ruby lib/migrate.rb` (beware! this will destroy the database!)
+8. Run `ruby lib/metrix.rb`
 
+## Obtaining Travis API Token
+
+1. Create [GitHub Personal Access Token](https://github.com/settings/tokens)
+2. Use GitHub Token to authenticate the Travis client:
+
+    ```` shell
+    $ travis login --pro --github-token XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    ````
+    
+3. Open `~/.travis/config.yml` and copy `access_token` from `https://api.travis-ci.com/` endpoint.

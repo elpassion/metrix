@@ -28,6 +28,8 @@ db.create_table :builds do
   String :commit_sha
   Boolean :pull_request
   String :state
+  Integer :lines_of_code
+  Integer :lines_tested
   Integer :quality_issues
   Integer :style_issues
   Integer :security_issues
