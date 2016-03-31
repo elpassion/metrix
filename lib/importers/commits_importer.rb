@@ -1,8 +1,11 @@
 require 'rugged'
-require_relative 'importer'
+
+require_relative '../importer'
 
 class CommitsImporter < Importer
   self.resource_type = :commits
+
+  CONFLICT_PATTERN = /(c|k)onfli(c|k)t/i
 
   private
 
@@ -19,9 +22,13 @@ class CommitsImporter < Importer
 
   def import_commit(commit)
     project.commits.insert(
-        project_id: project.id,
-        timestamp:  commit.time,
-        sha:        commit.oid
+      project_id:    project.id,
+      type:          'commit',
+      timestamp:     commit.time,
+      string_key:    'sha',
+      string_value:  commit.oid,
+      boolean_key:   'is_conflict',
+      boolean_value: commit.message =~ CONFLICT_PATTERN
     )
   end
 

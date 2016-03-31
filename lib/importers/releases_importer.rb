@@ -1,7 +1,7 @@
 require 'date'
 require 'platform-api'
 
-require_relative 'importer'
+require_relative '../importer'
 
 class ReleasesImporter < Importer
   self.resource_type = :releases
@@ -15,10 +15,13 @@ class ReleasesImporter < Importer
 
   def import_release(release)
     project.releases.insert(
-        project_id:  project.id,
-        timestamp:   DateTime.parse(release['created_at']),
-        version:     release['version'],
-        description: release['description']
+      project_id:    project.id,
+      type:          'release',
+      timestamp:     DateTime.parse(release['created_at']),
+      integer_key:   'version',
+      integer_value: release['version'],
+      string_key:    'description',
+      string_value:  release['description']
     )
   end
 

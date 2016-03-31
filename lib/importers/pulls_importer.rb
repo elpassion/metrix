@@ -15,10 +15,14 @@ class PullsImporter < GithubImporter
 
   def import_pull_request(pull_request)
     project.pull_requests.insert(
-        project_id: project.id,
-        timestamp:  pull_request.created_at,
-        closed_at:  pull_request.closed_at,
-        merged_at:  pull_request.merged_at
+      project_id:      project.id,
+      type:            'pull_request',
+      timestamp:       pull_request.created_at,
+      # closed_at:  pull_request.closed_at,
+      timestamp_key:   'merged_at',
+      timestamp_value: pull_request.merged_at,
+      boolean_key:     'is_conflict',
+      boolean_value:   pull_request.title =~ CommitsImporter::CONFLICT_PATTERN || pull_request.body =~ CommitsImporter::CONFLICT_PATTERN
     )
   end
 end

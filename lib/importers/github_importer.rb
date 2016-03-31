@@ -1,5 +1,6 @@
 require 'octokit'
-require_relative 'importer'
+
+require_relative '../importer'
 
 class GithubImporter < Importer
 

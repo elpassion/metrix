@@ -14,28 +14,28 @@ class Project
     initialize_db_project
   end
 
-  def commits
-    db[:commits].where(project_id: id)
+  def builds
+    db[:builds].where(project_id: id)
   end
 
   def issues
     db[:issues].where(project_id: id)
   end
 
-  def releases
-    db[:releases].where(project_id: id)
+  def commits
+    db[:activities].where(project_id: id, type: 'commit')
   end
 
-  def builds
-    db[:builds].where(project_id: id)
+  def releases
+    db[:activities].where(project_id: id, type: 'release')
   end
 
   def pull_requests
-    db[:pull_requests].where(project_id: id)
+    db[:activities].where(project_id: id, type: 'pull_request')
   end
 
   def comments
-    db[:comments].where(project_id: id)
+    db[:activities].where(project_id: id, type: 'comment')
   end
 
   def transaction(&block)

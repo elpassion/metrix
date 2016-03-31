@@ -13,20 +13,13 @@ db.create_table :projects do
   index :name, unique: true
 end
 
-db.create_table :commits do
-  primary_key :id
-  foreign_key :project_id, :projects
-  DateTime :timestamp
-  String :sha
-end
-
 db.create_table :builds do
   primary_key :id
   foreign_key :project_id, :projects
   DateTime :timestamp
   Integer :number
   String :commit_sha
-  Boolean :pull_request
+  TrueClass :pull_request
   String :state
   Integer :lines_of_code
   Integer :lines_tested
@@ -48,24 +41,21 @@ db.create_table :issues do
   String :engine_name
 end
 
-db.create_table :releases do
+db.create_table :activities do
   primary_key :id
   foreign_key :project_id, :projects
+  String :type
   DateTime :timestamp
-  Integer :version
-  String :description
-end
-
-db.create_table :pull_requests do
-  primary_key :id
-  foreign_key :project_id, :projects
-  DateTime :timestamp
-  DateTime :closed_at
-  DateTime :merged_at
-end
-
-db.create_table :comments do
-  primary_key :id
-  foreign_key :project_id, :projects
-  DateTime :timestamp
+  Integer :integer_key
+  Integer :integer_value
+  String :string_key
+  String :string_value
+  Float :float_key
+  Float :float_value
+  BigDecimal :decimal_key
+  BigDecimal :decimal_value
+  DateTime :timestamp_key
+  DateTime :timestamp_value
+  TrueClass :boolean_key
+  TrueClass :boolean_value
 end
