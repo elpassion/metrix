@@ -1,7 +1,7 @@
 require 'fileutils'
 require 'json'
 
-class IssuesAnalyzer
+class QualityAnalyzer
   attr_reader :working_dir
 
   def initialize(working_dir)

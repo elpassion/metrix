@@ -3,7 +3,7 @@ require 'parallel'
 require 'travis/pro'
 
 require_relative 'importer'
-require_relative 'test_log_parser'
+require_relative '../utils/test_log_parser'
 
 class BuildsImporter < Importer
   self.resource_type = :builds

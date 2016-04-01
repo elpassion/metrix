@@ -1,7 +1,7 @@
 require 'date'
 require 'platform-api'
 
-require_relative '../importer'
+require_relative 'importer'
 
 class ReleasesImporter < Importer
   self.resource_type = :releases

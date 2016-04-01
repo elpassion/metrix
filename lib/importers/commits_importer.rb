@@ -1,6 +1,6 @@
 require 'rugged'
 
-require_relative '../importer'
+require_relative 'importer'
 
 class CommitsImporter < Importer
   self.resource_type = :commits

@@ -1,4 +1,4 @@
-require_relative 'gpa'
+require_relative '../utils/gpa'
 
 class CodeQualityCalculator
 

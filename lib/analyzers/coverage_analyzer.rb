@@ -1,9 +1,9 @@
 require 'fileutils'
 require 'yaml'
 
-require_relative 'test_log_parser'
+require_relative '../utils/test_log_parser'
 
-class CoverageCalculator
+class CoverageAnalyzer
   attr_reader :working_dir
 
   def initialize(working_dir)
@@ -11,7 +11,7 @@ class CoverageCalculator
     @running_dir = FileUtils.pwd
   end
 
-  def calculate
+  def analyze
     FileUtils.chdir(working_dir)
 
     db_name     = "metrix_ci_test_#{rand(1000000)}_#{rand(1000000)}}"

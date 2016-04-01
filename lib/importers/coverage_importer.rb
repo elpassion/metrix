@@ -1,9 +1,9 @@
 require 'fileutils'
 require 'timeout'
 
-require_relative '../coverage_calculator'
-require_relative '../importer'
+require_relative '../analyzers/coverage_analyzer'
 require_relative '../utils/git_walker'
+require_relative 'importer'
 
 class CoverageImporter < Importer
   self.resource_type = :builds
@@ -36,7 +36,7 @@ class CoverageImporter < Importer
   end
 
   def analyze_repository(path, sha)
-    Timeout::timeout(TIMEOUT) { CoverageCalculator.new(path).calculate }
+    Timeout::timeout(TIMEOUT) { CoverageAnalyzer.new(path).analyze }
   rescue => error
     log_warning "Cannot analyze Commit #{sha}:\n#{error.message}"
 

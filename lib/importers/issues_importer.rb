@@ -1,9 +1,9 @@
 require 'fileutils'
 
-require_relative 'importer'
-require_relative 'issues_analyzer'
+require_relative '../analyzers/quality_analyzer'
+require_relative '../utils/git_walker'
 require_relative 'code_quality_calculator'
-require_relative 'utils/git_walker'
+require_relative 'importer'
 
 class IssuesImporter < Importer
   self.resource_type = :issues
@@ -46,7 +46,7 @@ class IssuesImporter < Importer
   def analyze_repository(path, sha)
     FileUtils.cp_r(File.join(current_path, 'codeclimate/.'), path)
 
-    IssuesAnalyzer.new(path).analyze
+    QualityAnalyzer.new(path).analyze
   rescue => error
     log_warning "Cannot analyze Commit #{sha}:\n#{error.message}"
 
